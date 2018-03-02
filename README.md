@@ -7,28 +7,28 @@ Author: Charles Bucher
 I followed the project description
 
 # Instructions
-Install python3 and ensure you have support for PIL and Numpy
-From your terminal, run:
+Install python3 and ensure system support for the PIL and Numpy libraries.
 
-$python3 stenography.py <METHOD> <INPUT_FILE> {<MESSAGE>}
+From your terminal, run: <br>
+$python3 stenography.py <METHOD> \<INPUT_FILE> \<MESSAGE>
 
-METHOD:
-- Required argument.
+METHOD:<br>
+- *Required argument.
 - HIDE: Will consume an image, embed the message, and output a .png file
-- REVEAL: Will analyze the given image for a secret mesage
+- REVEAL: Will analyze the given image for a secret mesage<br>
 
-INPUT_FILE:
-- Required argument.
-- For REVEAL method, ensure the image is of file type .png
+INPUT_FILE:<br>
+- *Required argument.
+- For REVEAL method, ensure the image is of file type .png<br>
 
-MESSAGE:
-- Optional argument.
+MESSAGE: <br>
+- *Optional argument.
 - Do NOT enter if REVEAL method was chosen
 - If not entered with HIDE method, source code will be embedded
-- Any input string. .txt files not supported yet.
+- Any input string. .txt files not supported yet.<br>
 
 Valid Examples:
 
-$python3 stenography HIDE InputFile.jpg "This is my secret message."
-$python3 stenography HIDE InputFile.jpg
-$python3 stenography REVEAL InputFile.jpg
+$python3 stenography HIDE InputFile.jpg "This is my secret message."<br>
+$python3 stenography HIDE InputFile.jpg<br>
+$python3 stenography REVEAL InputFile.png<br>
