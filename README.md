@@ -10,7 +10,7 @@ I followed the project description
 Install python3 and ensure system support for the PIL and Numpy libraries.
 
 From your terminal, run: <br>
-$python3 stenography.py <METHOD> \<INPUT_FILE> \<MESSAGE>
+$python3 stenography.py \<METHOD> \<INPUT_FILE> \<MESSAGE>
 
 METHOD: *(Required)*
 - HIDE: Will consume an image, embed the message, and output a .png file
