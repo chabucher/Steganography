@@ -168,6 +168,7 @@ def main():
     # 1. Open the image and get it's dimensions
     extension = os.path.splitext(inputImage)[1]
     photo = Image.open(inputImage)
+    photo = photo.convert("RGB")
     width = photo.size[0]
     height = photo.size[1]
 
