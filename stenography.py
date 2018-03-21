@@ -1,8 +1,8 @@
+# Author: Charles Bucher
+# Last Modified: 3/21/18
+
 from PIL import Image
-from PIL import ImageOps
 import numpy as np
-import scipy.misc as smp
-from scipy import ndimage
 import sys
 import os.path
 
@@ -45,22 +45,28 @@ def binaryToMsg(binary):
     return msg
 
 
-def getMsgLenFromGrid(pixelGrid):
+def getMsgLenFromGrid(pixelGrid): # As number of characters
 
-    w = pixelGrid.shape[0]
-    h = pixelGrid.shape[1]
+    width = pixelGrid.shape[0]
+    height = pixelGrid.shape[1]
 
     sizeStr = ""
-    stop = 33
-    for i in reversed(range(0, w)):
-        for j in reversed(range(0, h)):
-            if stop == 0:
-                return int(sizeStr, 2)
+    pixelCtr = 11
+    for i in reversed(range(0, width)):
+        for j in reversed(range(0, height)):
+            if pixelCtr == 0:
+                sizeStr = sizeStr[::-1] # Reverse to get correct bit string
+                retVal = int(sizeStr, 2)
+                # Not divisble by 8 means this picture was not embedded correctly!
+                return -1 if retVal % 8 != 0 else int(retVal / 8)
+
             r, g, b = pixelGrid[i, j]
             # Concatenate in reverse order the LSB of each
             # value (i.e., whether or not it is an odd number)
-            sizeStr = "%s%s%s"%(r % 2,g % 2,b % 2) + sizeStr
-            stop -= 3
+            sizeStr = "%s%s%s"%(b % 2,g % 2, r % 2) + sizeStr
+            if pixelCtr == 1:
+                sizeStr = sizeStr[1:] # The "B" value of the last pixel is not used
+            pixelCtr -= 1
 
     return 0
 
@@ -74,20 +80,28 @@ def embedMsgInGrid(msg, pixelGrid, isMsgLen):
     startAfter = 0 if isMsgLen else 11
     pixelCtr = 0 # The current pixel
 
-    idx = len(msg) - 1 # Read from right to left
+    idx = 0
     for i in reversed(range(0, w)):
         for j in reversed(range(0, h)):
 
             if pixelCtr < startAfter:
                 pixelCtr += 1
                 continue
-            if idx < 0:
+            if idx >= len(msg):
                 return
+            
+            r_lsb = 0
+            g_lsb = 0
+            b_lsb = 0
 
-            # Get the new LSB for each pixel value
-            b_lsb = int(msg[idx])
-            g_lsb = int(msg[idx-1])
-            r_lsb = int(msg[idx-2])
+            # Get the new LSB for each pixel value. Bounds check each time
+            if idx <= len(msg) - 1:
+                r_lsb = int(msg[idx])
+            if idx <= len(msg) - 2:
+                g_lsb = int(msg[idx+1])
+            if idx <= len(msg) - 3:
+                b_lsb = int(msg[idx+2])
+            
             r, g, b = pixelGrid[i, j]
             # Change the LSB of the grid if it doesn't
             # match the new LSB
@@ -100,25 +114,25 @@ def embedMsgInGrid(msg, pixelGrid, isMsgLen):
             
             # Update the grid with the new values
             pixelGrid[i, j] = [r, g, b]
-            idx -= 3
+            idx += 3
             
     return
 
 
 def retrieveMsgFromGrid(msgSize, pixelGrid):
 
-    w = pixelGrid.shape[0]
-    h = pixelGrid.shape[1]
+    width = pixelGrid.shape[0]
+    height = pixelGrid.shape[1]
 
-    pixelCtr = 0
+    pixelCtr = 0 # Skips first 11 pixels
     secretMsg = ""
-    masterCtr = 0
-    letterCtr = 0
+    masterCtr = 0 # Stop when total num of bits for secret msg are reached
+    letterCtr = 0 # Counts up to 8 bits
     binStr = ""
 
 
-    for i in reversed(range(0, w)):
-        for j in reversed(range(0, h)):
+    for i in reversed(range(0, width)):
+        for j in reversed(range(0, height)):
             if pixelCtr < 11:
                 pixelCtr += 1
                 continue
@@ -128,31 +142,33 @@ def retrieveMsgFromGrid(msgSize, pixelGrid):
             overflowStart = 0
             if letterCtr <= 5:
                 # All three values go to this current letter's binary
-                binStr = "%s%s%s"%(r % 2,g % 2,b % 2) + binStr
+                binStr = "%s%s%s"%(b % 2, g % 2, r % 2) + binStr
                 letterCtr += 3
             elif letterCtr == 6:
-                # G, B goes to current letter
-                binStr = "%s%s"%(g % 2,b % 2) + binStr
+                # G, R goes to current letter
+                binStr = "%s%s"%(g % 2, r % 2) + binStr
                 letterCtr += 2
 
-                # R goes to next letter
-                overflowBinStr = "%s"%(r % 2)
+                # B goes to next letter
+                overflowBinStr = "%s"%(b % 2)
                 overflowStart = 1
 
             elif letterCtr == 7:
-                # B goes to current letter
-                binStr = "%s"%(b % 2) + binStr
+                # R goes to current letter
+                binStr = "%s"%(r % 2) + binStr
                 letterCtr += 1
                 
-                # G, R goes to next letter
-                overflowBinStr = "%s%s"%(r % 2,g % 2)
+                # B, G goes to next letter
+                overflowBinStr = "%s%s"%(b % 2,g % 2)
                 overflowStart = 2
             
             masterCtr += 3
 
             if letterCtr == 8:
-                # Add the letter to the message!
-                secretMsg = chr(int(binStr, 2)) + secretMsg
+                # Reverse the bit string for proper letter
+                binStr = binStr[::-1]
+                secretMsg = secretMsg + chr(int(binStr, 2))
+                
                 # Handle any overflow.
                 if masterCtr >= (msgSize * 8):
                     return secretMsg
@@ -184,7 +200,7 @@ def main():
     if method == "HIDE":
         print("Hiding message...")
         # 5. Embed message length
-        msgLen = format(len(message), "#035b")[2:]
+        msgLen = format(len(message)*8, "#034b")[2:]
         embedMsgInGrid(msgLen, pixelGrid, isMsgLen=True)
         
         # 6. Embed secret message
@@ -203,6 +219,9 @@ def main():
         print("Retrieving message...")
 
         msgLen = getMsgLenFromGrid(pixelGrid)
+        if msgLen == -1:
+            print("Message not embedded propely. Cannot read\n")
+            return
         secretMessage = retrieveMsgFromGrid(msgLen, pixelGrid)
         print("Secret Message:", secretMessage)
 
