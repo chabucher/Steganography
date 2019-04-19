@@ -1,4 +1,4 @@
-# Stenography
+# Steganography
 A program that allows you to discreetly hide messages within photos 
 
 Author: Charles Bucher<br>
@@ -22,7 +22,7 @@ Now, starting at the 12th pixel, we will store the rest of the text, using the 8
 Install python3 and ensure system support for the PIL and Numpy libraries.
 
 From your terminal, run: <br>
-$python3 stenography.py \<METHOD> \<INPUT_FILE> \<MESSAGE>
+$python3 steganography.py \<METHOD> \<INPUT_FILE> \<MESSAGE>
 
 METHOD: *(Required)*
 - HIDE: Will consume an image, embed the message, and output a .png file
@@ -38,6 +38,6 @@ MESSAGE: *(Optional)*
 
 **Valid Examples:**
 
-$python3 stenography HIDE InputFile.jpg "This is my secret message."<br>
-$python3 stenography HIDE InputFile.jpg<br>
-$python3 stenography REVEAL InputFile.png<br>
+$python3 steganography HIDE InputFile.jpg "This is my secret message."<br>
+$python3 steganography HIDE InputFile.jpg<br>
+$python3 steganography REVEAL InputFile.png<br>
